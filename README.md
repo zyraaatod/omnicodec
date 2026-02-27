@@ -147,19 +147,19 @@ python start.py
 ╔══════════════════════════════════════════════════════════════════╗
 ║  OMNICODEC - Universal Encode/Decode Toolkit                     ║
 ╠══════════════════════════════════════════════════════════════════╣
-║  Statistics:                                                      ║
-║    Methods:    169                                                ║
-║    Categories: 25                                                 ║
-║                                                                   ║
-║  Main Menu:                                                       ║
-║    [1, e] ENC       - Encode data dengan 1 method                 ║
-║    [2, d] DEC       - Decode data back to original                ║
-║    [3, l] LIST      - List all available methods                  ║
-║    [s] SPESIAL    - 🔥 1 file → 1 file (all encodings) ⭐          ║
-║    [a] ENC ALL    - Encode 1 file dengan SEMUA method!            ║
-║    [x] ALL IN ONE  - 🔥 ENC+DEC semua method!                     ║
-║    [c] CLEAR      - Refresh screen                                ║
-║    [q] EXIT       - Exit application                              ║
+║  Statistics:                                                     ║
+║    Methods:    169                                               ║
+║    Categories: 25                                                ║
+║                                                                  ║
+║  Main Menu:                                                      ║
+║    [1, e] ENC       - Encode data dengan 1 method                ║
+║    [2, d] DEC       - Decode data back to original               ║
+║    [3, l] LIST      - List all available methods                 ║
+║    [s] SPESIAL    - 🔥 1 file → 1 file (all encodings) ⭐       ║
+║    [a] ENC ALL    - Encode 1 file dengan SEMUA method!           ║
+║    [x] ALL IN ONE - 🔥 ENC+DEC semua method!                    ║
+║    [c] CLEAR      - Refresh screen                               ║
+║    [q] EXIT       - Exit application                             ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 
