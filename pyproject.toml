@@ -1,0 +1,19 @@
+﻿[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omnicodec"
+version = "0.1.0"
+description = "Universal encode/decode toolkit"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Omnicodec Team"}]
+dependencies = []
+
+[project.scripts]
+omnicodec = "omnicodec.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["app"]
+include = ["omnicodec*"]

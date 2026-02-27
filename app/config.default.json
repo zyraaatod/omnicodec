@@ -1,0 +1,7 @@
+﻿{
+  "output_dir": "$HOME/omnicodec/output",
+  "auto_save": true,
+  "base64_line_width": 76,
+  "gzip_level": 6,
+  "max_preview_bytes": 512
+}
