@@ -8,7 +8,7 @@ import os
 
 @dataclass
 class AppConfig:
-    output_dir: Path = field(default_factory=lambda: Path.home() / "omnicodec" / "output")
+    output_dir: Path = field(default_factory=lambda: Path(__file__).parent.parent / "output")
     auto_save: bool = True
     base64_line_width: int = 76
     gzip_level: int = 6
@@ -25,7 +25,7 @@ class AppConfig:
 
         data = json.loads(path.read_text(encoding="utf-8"))
         cfg = cls(
-            output_dir=Path(os.path.expandvars(data.get("output_dir", str(Path.home() / "omnicodec" / "output")))),
+            output_dir=Path(os.path.expandvars(data.get("output_dir", str(Path(__file__).parent.parent / "output")))),
             auto_save=bool(data.get("auto_save", True)),
             base64_line_width=int(data.get("base64_line_width", 76)),
             gzip_level=int(data.get("gzip_level", 6)),

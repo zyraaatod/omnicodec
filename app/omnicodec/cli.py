@@ -462,15 +462,15 @@ def _get_file_header(data: bytes) -> tuple[bytes, bytes]:
 
 
 def _spesial_enc(engine: OmniCodecEngine) -> str:
-    """SPESIAL ENC - 1 file target, 1 file result, semua encoding tanpa label."""
+    """SPESIAL ENC - 1 file target, 1 file result, layered encoding dengan semua method."""
     clear_screen()
     print("")
     print(banner())
     print("")
-    print_info(f"{C.yellow}{C.bold}SPESIAL ENCODE - All Encodings in One File{C.reset}")
+    print_info(f"{C.yellow}{C.bold}SPESIAL ENCODE - Layered All-in-One Encoding{C.reset}")
     print(separator())
     print("")
-    print_info("1 file → 1 file (semua encoding, tanpa label, preserve header)")
+    print_info("1 file → 1 file (layered encoding: base64→hex→base32→...)")
     print("")
     
     # Input file
@@ -498,30 +498,33 @@ def _spesial_enc(engine: OmniCodecEngine) -> str:
     print(separator())
     print("")
     
-    # Get all encode methods
-    all_methods = [spec for spec in engine.list_methods() if spec.encode is not None]
+    # Get selected encode methods (ordered chain)
+    chain_methods = ["base64", "hex", "base32", "url", "html_entity", "unicode_escape"]
+    available_methods = []
     
-    print_info(f"Encoding dengan {len(all_methods)} method...")
+    for method_key in chain_methods:
+        try:
+            spec = engine.registry.get(method_key)
+            if spec.encode is not None:
+                available_methods.append(spec)
+        except KeyError:
+            pass
+    
+    print_info(f"Encoding chain: {' → '.join(m.key for m in available_methods)}")
     print("")
     
-    # Encode with all methods
-    encoded_lines = []
-    success_count = 0
-    error_count = 0
+    # Layered encoding
+    current_data = body
+    encoding_history = []
     
-    for i, spec in enumerate(all_methods, start=1):
+    for i, spec in enumerate(available_methods, start=1):
         try:
-            output = spec.encode(body, {})
-            # Convert to text and add to lines
-            encoded_text = output.decode("utf-8", errors="replace").strip()
-            # Remove any newlines from encoded text
-            encoded_text = encoded_text.replace("\n", "\\n")
-            encoded_lines.append(encoded_text)
-            success_count += 1
-            print(f"[{i:03}/{len(all_methods)}] {C.green}✓{C.reset} {spec.key:25}")
+            output = spec.encode(current_data, {})
+            encoding_history.append(spec.key)
+            current_data = output
+            print(f"[{i:02}/{len(available_methods)}] {C.green}✓{C.reset} {spec.key:20} → {len(current_data)} bytes")
         except Exception as e:
-            error_count += 1
-            print(f"[{i:03}/{len(all_methods)}] {C.red}✗{C.reset} {spec.key:25} → {str(e)[:40]}")
+            print(f"[{i:02}/{len(available_methods)}] {C.red}✗{C.reset} {spec.key:20} → Skipped")
     
     print("")
     print(separator())
@@ -538,14 +541,16 @@ def _spesial_enc(engine: OmniCodecEngine) -> str:
     if header:
         output_lines.append(header.decode("utf-8", errors="ignore"))
     
-    # Add comment
-    output_lines.append(f"# OMNICODEC ENCODED - {success_count} encodings")
+    # Add metadata comment
+    output_lines.append(f"# OMNICODEC LAYERED ENCODED")
+    output_lines.append(f"# Chain: {' → '.join(encoding_history)}")
     output_lines.append(f"# Original: {path.name}")
     output_lines.append(f"# Decode: python start.py spesial-dec <file>")
     output_lines.append("")
     
-    # Add all encoded lines
-    output_lines.extend(encoded_lines)
+    # Add final encoded data (single line, no label)
+    final_encoded = current_data.decode("utf-8", errors="replace").strip()
+    output_lines.append(final_encoded)
     
     # Write output
     output_content = "\n".join(output_lines)
@@ -554,7 +559,8 @@ def _spesial_enc(engine: OmniCodecEngine) -> str:
     print_success(f"Saved: {output_path}")
     print(f"  Original: {len(input_data)} bytes")
     print(f"  Encoded: {len(output_content)} bytes")
-    print(f"  Encodings: {success_count}")
+    print(f"  Layers: {len(encoding_history)}")
+    print(f"  Chain: {' → '.join(encoding_history)}")
     print("")
     
     input(f"{C.gray}Tekan Enter untuk kembali...{C.reset}")
@@ -562,12 +568,12 @@ def _spesial_enc(engine: OmniCodecEngine) -> str:
 
 
 def _spesial_dec(engine: OmniCodecEngine) -> str:
-    """SPESIAL DEC - Decode file from spesial enc."""
+    """SPESIAL DEC - Decode layered encoding from spesial enc."""
     clear_screen()
     print("")
     print(banner())
     print("")
-    print_info(f"{C.green}{C.bold}SPESIAL DECODE - Restore Original File{C.reset}")
+    print_info(f"{C.green}{C.bold}SPESIAL DECODE - Restore Layered Encoding{C.reset}")
     print(separator())
     print("")
     print_info("Decode file dari spesial enc → restore original")
@@ -584,71 +590,62 @@ def _spesial_dec(engine: OmniCodecEngine) -> str:
     input_name = path.stem.replace("-enc", "")
     input_ext = path.suffix
     
-    # Parse file
+    # Parse file - extract encoded data and chain info
     lines = input_content.split("\n")
     header_lines = []
-    encoded_lines = []
-    in_body = False
+    encoded_line = ""
+    chain_info = []
     
+    in_body = False
     for line in lines:
         if not in_body:
-            if line.startswith("# OMNICODEC"):
-                in_body = True
+            if line.startswith("# Chain:"):
+                chain_info = line.replace("# Chain:", "").strip().split("→")
+                chain_info = [c.strip() for c in chain_info]
                 continue
-            elif line.startswith("#") or line.strip() == "":
+            elif line.startswith("#"):
                 header_lines.append(line)
+                continue
+            elif line.strip() == "":
                 continue
             else:
                 in_body = True
-        
-        if line.strip():
-            encoded_lines.append(line)
+                encoded_line = line.strip()
     
     clear_screen()
     print("")
     print(banner())
     print("")
     print_info(f"Processing: {path.name}")
-    print(f"Encoded lines: {C.cyan}{len(encoded_lines)}{C.reset}")
+    print(f"Chain: {C.cyan}{' → '.join(chain_info)}{C.reset}")
     print("")
     print(separator())
     print("")
     
-    # Try to decode with all methods
-    all_methods = [spec for spec in engine.list_methods() if spec.decode is not None]
+    # Reverse the chain for decoding
+    decode_chain = list(reversed(chain_info))
     
-    print_info("Trying to decode...")
+    print_info(f"Decoding chain: {' → '.join(decode_chain)}")
     print("")
     
-    decoded_results = {}
+    # Layered decoding
+    current_data = encoded_line.encode("utf-8")
     
-    for i, spec in enumerate(all_methods, start=1):
+    for i, method_key in enumerate(decode_chain, start=1):
         try:
-            # Try first few encoded lines
-            for enc_line in encoded_lines[:5]:
-                # Unescape newlines
-                enc_line = enc_line.replace("\\n", "\n")
-                output = spec.decode(enc_line.encode("utf-8"), {})
-                # Check if result looks like valid data
-                if output and len(output) > 0:
-                    decoded_results[spec.key] = output
-                    print(f"[{i:03}/{len(all_methods)}] {C.green}✓{C.reset} {spec.key:25} → {len(output)} bytes")
-                    break
-        except Exception:
-            pass
+            spec = engine.registry.get(method_key)
+            if spec.decode is None:
+                print(f"[{i:02}/{len(decode_chain)}] {C.red}✗{C.reset} {method_key:20} → No decode")
+                continue
+            output = spec.decode(current_data, {})
+            current_data = output
+            print(f"[{i:02}/{len(decode_chain)}] {C.green}✓{C.reset} {method_key:20} → {len(current_data)} bytes")
+        except Exception as e:
+            print(f"[{i:02}/{len(decode_chain)}] {C.red}✗{C.reset} {method_key:20} → {str(e)[:30]}")
     
     print("")
     print(separator())
     print("")
-    
-    if not decoded_results:
-        print_error("Tidak ada yang bisa di-decode!")
-        input(f"{C.gray}Tekan Enter untuk kembali...{C.reset}")
-        return "SPESIAL DEC: Failed"
-    
-    # Use first successful decode as result
-    first_key = list(decoded_results.keys())[0]
-    decoded_data = decoded_results[first_key]
     
     # Generate output file
     output_name = f"{input_name}{input_ext}"
@@ -657,16 +654,15 @@ def _spesial_dec(engine: OmniCodecEngine) -> str:
     # Add header back
     header_text = "\n".join(header_lines)
     if header_text.strip():
-        output_content = header_text + "\n" + decoded_data.decode("utf-8", errors="replace")
+        output_content = header_text + "\n" + current_data.decode("utf-8", errors="replace")
     else:
-        output_content = decoded_data.decode("utf-8", errors="replace")
+        output_content = current_data.decode("utf-8", errors="replace")
     
     output_path.write_text(output_content, encoding="utf-8")
     
     print_success(f"Restored: {output_path}")
-    print(f"  Method: {first_key}")
     print(f"  Size: {len(output_content)} bytes")
-    print(f"  Decoded: {len(decoded_results)} methods succeeded")
+    print(f"  Layers decoded: {len(decode_chain)}")
     print("")
     
     input(f"{C.gray}Tekan Enter untuk kembali...{C.reset}")
