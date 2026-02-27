@@ -1,6 +1,11 @@
 ﻿from __future__ import annotations
 import sys
 from pathlib import Path
+import os
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+clear_screen()
 
 ROOT = Path(__file__).resolve().parent
 APP_DIR = ROOT / "app"
